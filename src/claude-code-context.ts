@@ -35,25 +35,25 @@ export interface RefreshContext {
 export const EMPTY_CONTEXT: RefreshContext = { memoryDirs: [], sessionSnippets: [] };
 
 /**
- * EigenFlux plumbing must never feed back into the bio. Covers feed payloads
+ * AliceRealm plumbing must never feed back into the bio. Covers feed payloads
  * AND the plugin's own nightly prompts: the CLI-assembled refresh/status
  * prompts land in the transcript as plain user messages (no <channel> tag),
  * so we match stable phrases from their actual bodies — "due for its daily
- * refresh" (profile_refresh.go) and "refreshed your EigenFlux bio"
+ * refresh" (profile_refresh.go) and "refreshed your AliceRealm bio"
  * (profile_status.go). Without these, the next night's snippets are the
  * previous night's prompts, feeding the pipeline back into itself.
  */
-function isEigenfluxPayload(text: string): boolean {
+function isAliceRealmPayload(text: string): boolean {
   return (
-    text.includes('Powered by EigenFlux') ||
-    text.includes('source="eigenflux"') ||
-    text.includes('EigenFlux feed payload') ||
-    text.includes('EIGENFLUX_FEED_PAYLOAD') ||
-    text.includes('EIGENFLUX PROFILE REVIEW TASK') ||
-    text.includes('eigenflux feed poll') ||
+    text.includes('Powered by AliceRealm') ||
+    text.includes('source="alicerealm"') ||
+    text.includes('AliceRealm feed payload') ||
+    text.includes('ALICEREALM_FEED_PAYLOAD') ||
+    text.includes('ALICEREALM PROFILE REVIEW TASK') ||
+    text.includes('alicerealm feed poll') ||
     text.includes('profile refresh-prompt') ||
     text.includes('due for its daily refresh') ||
-    text.includes('refreshed your EigenFlux bio')
+    text.includes('refreshed your AliceRealm bio')
   );
 }
 
@@ -124,7 +124,7 @@ function extractSessionSnippets(transcriptPath: string): string[] {
       };
       if (entry.type !== 'user' && entry.type !== 'assistant') continue;
       const text = extractText(entry.message?.content).replace(/\s+/g, ' ').trim();
-      if (!text || isEigenfluxPayload(text)) continue;
+      if (!text || isAliceRealmPayload(text)) continue;
       snippets.push(text.slice(0, MAX_SNIPPET_CHARS));
     } catch {
       // partial/corrupt line (e.g. cut by the tail window) — skip
@@ -172,7 +172,7 @@ export function collectClaudeCodeContext(): RefreshContext {
 
     return { memoryDirs, sessionSnippets };
   } catch (err) {
-    log(`[eigenflux:context] collection failed: ${err instanceof Error ? err.message : String(err)}`);
+    log(`[alicerealm:context] collection failed: ${err instanceof Error ? err.message : String(err)}`);
     return EMPTY_CONTEXT;
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Retry cadence driving `eigenflux feed event flush` (behavior-event upload).
+ * Retry cadence driving `alicerealm feed event flush` (behavior-event upload).
  *
  * The CLI owns the queue, batching, and dedup; it flushes one batch and
  * reports `{ flushed, remaining, ok }` without any back-off of its own.
@@ -7,8 +7,8 @@
  * pending arms an exponential back-off (5s base, 5min cap); a clean flush
  * (or empty queue) resets it and the loop goes idle until the next kick.
  *
- * The agent records events via `eigenflux feed event record` (see the
- * ef-broadcast skill's contract step 11), which validates, enriches, and
+ * The agent records events via `alicerealm feed event record` (see the
+ * ar-broadcast skill's contract step 11), which validates, enriches, and
  * queues them; this loop guarantees queued events eventually reach the
  * backend. Kicked on every successful feed poll.
  *
@@ -16,7 +16,7 @@
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
 
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 
 const log = console.error;
 
@@ -33,7 +33,7 @@ interface FlushResult {
 
 export interface FlushLoopConfig {
   serverName: string;
-  eigenfluxBin: string;
+  alicerealmBin: string;
   baseBackoffMs?: number;
   maxBackoffMs?: number;
   exec?: ExecFn;
@@ -41,7 +41,7 @@ export interface FlushLoopConfig {
 
 export class FeedbackFlushLoop {
   private readonly serverName: string;
-  private readonly eigenfluxBin: string;
+  private readonly alicerealmBin: string;
   private readonly baseBackoffMs: number;
   private readonly maxBackoffMs: number;
   private readonly exec: ExecFn;
@@ -52,10 +52,10 @@ export class FeedbackFlushLoop {
 
   constructor(config: FlushLoopConfig) {
     this.serverName = config.serverName;
-    this.eigenfluxBin = config.eigenfluxBin;
+    this.alicerealmBin = config.alicerealmBin;
     this.baseBackoffMs = config.baseBackoffMs ?? DEFAULT_BASE_BACKOFF_MS;
     this.maxBackoffMs = config.maxBackoffMs ?? DEFAULT_MAX_BACKOFF_MS;
-    this.exec = config.exec ?? execEigenflux;
+    this.exec = config.exec ?? execAliceRealm;
     this.currentBackoff = this.baseBackoffMs;
   }
 
@@ -66,7 +66,7 @@ export class FeedbackFlushLoop {
   start(): void {
     if (this.running) return;
     this.running = true;
-    log(`[eigenflux:flush] Starting feedback flush loop for server=${this.serverName}`);
+    log(`[alicerealm:flush] Starting feedback flush loop for server=${this.serverName}`);
     // Kick once on start to drain anything a previous run left on disk.
     void this.tick();
   }
@@ -79,7 +79,7 @@ export class FeedbackFlushLoop {
       this.timer = null;
     }
     this.currentBackoff = this.baseBackoffMs;
-    log(`[eigenflux:flush] Stopped`);
+    log(`[alicerealm:flush] Stopped`);
   }
 
   /** Nudge an immediate flush (e.g. after each successful feed poll). */
@@ -106,7 +106,7 @@ export class FeedbackFlushLoop {
     this.inFlight = true;
     try {
       const result = await this.exec<FlushResult>(
-        this.eigenfluxBin,
+        this.alicerealmBin,
         ['feed', 'event', 'flush', '-s', this.serverName]
       );
 
@@ -119,7 +119,7 @@ export class FeedbackFlushLoop {
       // Retry only when the push failed AND events are still pending. A clean
       // flush (or an empty queue) resets the back-off and idles the loop.
       if (result.kind === 'success' && remaining > 0 && !ok) {
-        log(`[eigenflux:flush] ${remaining} events pending; retrying in ${this.currentBackoff}ms`);
+        log(`[alicerealm:flush] ${remaining} events pending; retrying in ${this.currentBackoff}ms`);
         const delay = this.currentBackoff;
         this.currentBackoff = Math.min(this.currentBackoff * 2, this.maxBackoffMs);
         this.schedule(delay);
@@ -127,7 +127,7 @@ export class FeedbackFlushLoop {
         this.currentBackoff = this.baseBackoffMs;
       }
     } catch (err) {
-      log(`[eigenflux:flush] tick failed: ${err instanceof Error ? err.message : String(err)}`);
+      log(`[alicerealm:flush] tick failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       this.inFlight = false;
     }

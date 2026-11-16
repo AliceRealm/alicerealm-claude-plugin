@@ -4,23 +4,23 @@ import { join } from 'node:path';
 import type { FeedResponse } from './types.js';
 
 function resolveClaudeSkillsDir(): string {
-  return process.env.EIGENFLUX_SKILLS_DIR?.trim() || join(homedir(), '.claude', 'skills');
+  return process.env.ALICEREALM_SKILLS_DIR?.trim() || join(homedir(), '.claude', 'skills');
 }
 
 export function loadFeedOutputContract(skillsDir = resolveClaudeSkillsDir()): string {
-  const contractPath = join(skillsDir, 'ef-broadcast', 'references', 'contract.md');
+  const contractPath = join(skillsDir, 'ar-broadcast', 'references', 'contract.md');
   try {
     const contract = readFileSync(contractPath, 'utf-8').trim();
     if (contract) return contract;
   } catch (error) {
-    throw new Error(`EigenFlux central Feed contract is unavailable: ${contractPath}`, { cause: error });
+    throw new Error(`AliceRealm central Feed contract is unavailable: ${contractPath}`, { cause: error });
   }
-  throw new Error(`EigenFlux central Feed contract is empty: ${contractPath}`);
+  throw new Error(`AliceRealm central Feed contract is empty: ${contractPath}`);
 }
 
 // Compose the feed_update notification content: the output contract leads as a
 // prose block (so the binding rules are salient even if the agent never opens
-// the ef-broadcast skill), followed by the payload with the contract stripped
+// the ar-broadcast skill), followed by the payload with the contract stripped
 // so it appears once. Contract delivery is three-state (mirrors the backend
 // Feed handler): field absent → old server, fall back to the CLI-synced host
 // copy; present-but-empty → this payload needs no
@@ -34,14 +34,14 @@ export function buildFeedContent(payload: FeedResponse, heartbeatPlan: string | 
   const echoed = { ...payload, data: restData };
   return [
     ...(heartbeatPlan ? [
-      'EigenFlux heartbeat plan for this cycle:',
+      'AliceRealm heartbeat plan for this cycle:',
       heartbeatPlan,
       '',
       'The plugin has already pulled the attached Feed for this cycle. Use this payload without polling Feed again.',
       ...('local_batch' in payload.data ? ['This payload is batch 1 of a saved page (local_batch). Process further batches with feed next as the Skill directs.'] : []),
       '',
     ] : []),
-    'EigenFlux feed payload received. Process it via the ef-broadcast skill.',
+    'AliceRealm feed payload received. Process it via the ar-broadcast skill.',
     ...(contract ? ['', contract] : []),
     '',
     'Payload:',

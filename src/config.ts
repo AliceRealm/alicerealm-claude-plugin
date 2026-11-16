@@ -6,7 +6,7 @@ import { resolveRuntimeHost } from './runtime-identity.js';
 // package.json and .claude-plugin/plugin.json by scripts/set-version.mjs.
 const PLUGIN_VERSION = '0.0.18';
 
-// Minimum eigenflux CLI version this plugin build expects. When the installed
+// Minimum alicerealm CLI version this plugin build expects. When the installed
 // CLI is older, the channel emits a cli_outdated event so the agent can guide
 // the user through an upgrade (new subcommands silently fail on older CLIs
 // otherwise). Structured credential failures and same-account recovery require 0.6.7.
@@ -28,33 +28,33 @@ function parseIntervalOverride(envKey: string): number | null {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
 }
 
-function resolveEigenfluxHome(): string {
-  const envHome = process.env.EIGENFLUX_HOME;
+function resolveAliceRealmHome(): string {
+  const envHome = process.env.ALICEREALM_HOME;
   if (envHome) {
     const expanded = envHome === '~' ? os.homedir() : envHome.startsWith('~/') ? path.join(os.homedir(), envHome.slice(2)) : envHome;
-    return expanded.endsWith('.eigenflux') ? expanded : path.join(expanded, '.eigenflux');
+    return expanded.endsWith('.alicerealm') ? expanded : path.join(expanded, '.alicerealm');
   }
-  return path.join(os.homedir(), '.eigenflux');
+  return path.join(os.homedir(), '.alicerealm');
 }
 
 // Set once at module load so all CLI child processes inherit it.
-process.env.EIGENFLUX_HOME = resolveEigenfluxHome();
-process.env.EIGENFLUX_HOST = resolveRuntimeHost(process.env.EIGENFLUX_HOST_OVERRIDE);
-process.env.EIGENFLUX_MODE = 'plugin';
-process.env.EIGENFLUX_PLUGIN_VERSION = PLUGIN_VERSION;
-if (!process.env.EIGENFLUX_CHANNEL) {
-  process.env.EIGENFLUX_CHANNEL = 'claude-code';
+process.env.ALICEREALM_HOME = resolveAliceRealmHome();
+process.env.ALICEREALM_HOST = resolveRuntimeHost(process.env.ALICEREALM_HOST_OVERRIDE);
+process.env.ALICEREALM_MODE = 'plugin';
+process.env.ALICEREALM_PLUGIN_VERSION = PLUGIN_VERSION;
+if (!process.env.ALICEREALM_CHANNEL) {
+  process.env.ALICEREALM_CHANNEL = 'claude-code';
 }
-// Preserve an explicit EIGENFLUX_MODEL only. MCP does not expose the current
+// Preserve an explicit ALICEREALM_MODEL only. MCP does not expose the current
 // turn's model; configured defaults and ANTHROPIC_MODEL can differ after /model
 // changes or fallback. Skills pass known current models on their CLI requests.
 
 export const CONFIG = {
   // null = no env override → read the CLI config dynamically each cycle.
-  FEED_POLL_INTERVAL_OVERRIDE_SEC: parseIntervalOverride('EIGENFLUX_FEED_POLL_INTERVAL'),
-  EIGENFLUX_BIN: process.env.EIGENFLUX_BIN || 'eigenflux',
-  EIGENFLUX_SERVER: process.env.EIGENFLUX_SERVER || 'eigenflux',
-  EIGENFLUX_HOME: process.env.EIGENFLUX_HOME as string,
+  FEED_POLL_INTERVAL_OVERRIDE_SEC: parseIntervalOverride('ALICEREALM_FEED_POLL_INTERVAL'),
+  ALICEREALM_BIN: process.env.ALICEREALM_BIN || 'alicerealm',
+  ALICEREALM_SERVER: process.env.ALICEREALM_SERVER || 'alicerealm',
+  ALICEREALM_HOME: process.env.ALICEREALM_HOME as string,
   PLUGIN_VERSION,
   EXPECTED_CLI_VERSION,
   // Legacy alias: the skill bundle rides the plugin version.

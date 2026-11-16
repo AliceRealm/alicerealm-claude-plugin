@@ -1,4 +1,4 @@
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 
 type ExecFn = <T>(bin: string, args: string[], options?: ExecOptions) => Promise<CliResult<T>>;
 
@@ -15,10 +15,10 @@ export class HeartbeatPlanRunner {
   private inFlight = false;
 
   constructor(
-    private readonly eigenfluxBin: string,
-    private readonly eigenfluxHome: string,
+    private readonly alicerealmBin: string,
+    private readonly alicerealmHome: string,
     private readonly serverName: string,
-    private readonly exec: ExecFn = execEigenflux
+    private readonly exec: ExecFn = execAliceRealm
   ) {}
 
   async run(): Promise<HeartbeatStartResult> {
@@ -26,10 +26,10 @@ export class HeartbeatPlanRunner {
     this.inFlight = true;
     try {
       const result = await this.exec<HeartbeatPlan>(
-        this.eigenfluxBin,
+        this.alicerealmBin,
         [
           '--homedir',
-          this.eigenfluxHome,
+          this.alicerealmHome,
           '--server',
           this.serverName,
           'heartbeat',
@@ -43,13 +43,13 @@ export class HeartbeatPlanRunner {
         if (typeof result.data?.agent_prompt !== 'string' ||
             !result.data.agent_prompt.trim() ||
             typeof result.data.wake_on_empty !== 'boolean') {
-          throw new Error('EigenFlux CLI returned no compatible central heartbeat plan');
+          throw new Error('AliceRealm CLI returned no compatible central heartbeat plan');
         }
         return result.data;
       }
       const detail = result.kind === 'error' ? result.error.message
         : result.kind === 'auth_required' ? result.stderr : result.bin;
-      console.error(`[eigenflux:heartbeat] plan skipped: ${result.kind}: ${detail}`);
+      console.error(`[alicerealm:heartbeat] plan skipped: ${result.kind}: ${detail}`);
       if (result.kind === 'not_installed') return { kind: 'not_installed' };
       if (result.kind === 'auth_required') return { kind: 'auth_required', stderr: result.stderr };
       if (result.kind === 'error' && result.authenticationUnavailable) {
@@ -58,7 +58,7 @@ export class HeartbeatPlanRunner {
       return null;
     } catch (error) {
       console.error(
-        `[eigenflux:heartbeat] plan crashed: ${error instanceof Error ? error.message : String(error)}`
+        `[alicerealm:heartbeat] plan crashed: ${error instanceof Error ? error.message : String(error)}`
       );
       return null;
     } finally {

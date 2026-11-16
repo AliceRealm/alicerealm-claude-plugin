@@ -1,10 +1,10 @@
 /**
- * Agent-side settings reporter for EigenFlux (Claude Code plugin).
+ * Agent-side settings reporter for AliceRealm (Claude Code plugin).
  *
  * Pushes the agent's runtime mode to the backend once per successful poll by
- * delegating to the eigenflux CLI:
+ * delegating to the alicerealm CLI:
  *
- *   eigenflux settings push --mode plugin -s <server>
+ *   alicerealm settings push --mode plugin -s <server>
  *
  * The CLI owns everything else: change detection against its persisted
  * "last reported" marker, credentials, and the actual PUT. The plugin only
@@ -17,7 +17,7 @@
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
 
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 
 const log = console.error;
 
@@ -27,9 +27,9 @@ export class SettingsReporter {
   private inFlight = false;
 
   constructor(
-    private readonly eigenfluxBin: string,
+    private readonly alicerealmBin: string,
     private readonly serverName: string,
-    private readonly exec: ExecFn = execEigenflux
+    private readonly exec: ExecFn = execAliceRealm
   ) {}
 
   /** Trigger `settings push`. Returns true on success. Never throws. */
@@ -38,7 +38,7 @@ export class SettingsReporter {
     this.inFlight = true;
     try {
       const result = await this.exec<string>(
-        this.eigenfluxBin,
+        this.alicerealmBin,
         ['settings', 'push', '--mode', 'plugin', '-s', this.serverName],
         { parseJson: false }
       );
@@ -46,13 +46,13 @@ export class SettingsReporter {
         const status = typeof result.data === 'string' && result.data.includes('settings unchanged')
           ? 'unchanged'
           : typeof result.data === 'string' && result.data.includes('settings reported') ? 'reported' : 'completed';
-        log(`[eigenflux:settings] ${status} (mode=plugin, server=${this.serverName})`);
+        log(`[alicerealm:settings] ${status} (mode=plugin, server=${this.serverName})`);
         return true;
       }
-      log(`[eigenflux:settings] push skipped: ${result.kind}`);
+      log(`[alicerealm:settings] push skipped: ${result.kind}`);
       return false;
     } catch (err) {
-      log(`[eigenflux:settings] push crashed: ${err instanceof Error ? err.message : String(err)}`);
+      log(`[alicerealm:settings] push crashed: ${err instanceof Error ? err.message : String(err)}`);
       return false;
     } finally {
       this.inFlight = false;

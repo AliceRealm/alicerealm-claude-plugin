@@ -7,7 +7,7 @@ import { LeaderElector, commandEnablesChannel } from './instance-leader.js';
 
 function tmpSock(): string {
   // Keep the path short — unix socket paths are capped at ~104 bytes on darwin.
-  return path.join(os.tmpdir(), `ef-lead-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
+  return path.join(os.tmpdir(), `ar-lead-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
 }
 
 function waitFor(cond: () => boolean, timeoutMs = 5_000): Promise<void> {
@@ -155,12 +155,12 @@ describe('LeaderElector', () => {
 
 describe('commandEnablesChannel', () => {
   test.each([
-    'claude --dangerously-load-development-channels plugin:eigenflux@eigenflux-marketplace',
-    'node /opt/claude/cli.js --dangerously-load-development-channels server:eigenflux',
-    'claude --channels plugin:eigenflux@eigenflux-marketplace',
-    'claude --channels=plugin:eigenflux@eigenflux-marketplace --model opus',
-    'claude --channels plugin:telegram@claude-plugins-official plugin:eigenflux@eigenflux-marketplace',
-    'claude --resume abc --channels plugin:eigenflux@internal-mirror',
+    'claude --dangerously-load-development-channels plugin:alicerealm@alicerealm-marketplace',
+    'node /opt/claude/cli.js --dangerously-load-development-channels server:alicerealm',
+    'claude --channels plugin:alicerealm@alicerealm-marketplace',
+    'claude --channels=plugin:alicerealm@alicerealm-marketplace --model opus',
+    'claude --channels plugin:telegram@claude-plugins-official plugin:alicerealm@alicerealm-marketplace',
+    'claude --resume abc --channels plugin:alicerealm@internal-mirror',
   ])('matches %s', (command: string) => {
     expect(commandEnablesChannel(command)).toBe(true);
   });
@@ -168,12 +168,12 @@ describe('commandEnablesChannel', () => {
   test.each([
     'claude',
     'claude --channels plugin:telegram@claude-plugins-official',
-    'claude --channels plugin:telegram@claude-plugins-official --add-dir /work/eigenflux',
-    'claude --channels plugin:eigenflux-extra@eigenflux-marketplace',
-    'claude --channels plugin:eigenflux@',
-    'claude --channels server:eigenflux-dev',
-    'claude --model opus plugin:eigenflux@eigenflux-marketplace',
-    'claude --dangerously-load-development-channels server:webhook /tmp/eigenflux',
+    'claude --channels plugin:telegram@claude-plugins-official --add-dir /work/alicerealm',
+    'claude --channels plugin:alicerealm-extra@alicerealm-marketplace',
+    'claude --channels plugin:alicerealm@',
+    'claude --channels server:alicerealm-dev',
+    'claude --model opus plugin:alicerealm@alicerealm-marketplace',
+    'claude --dangerously-load-development-channels server:webhook /tmp/alicerealm',
   ])('does not match %s', (command: string) => {
     expect(commandEnablesChannel(command)).toBe(false);
   });

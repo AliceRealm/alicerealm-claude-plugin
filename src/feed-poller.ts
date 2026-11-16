@@ -1,16 +1,16 @@
 /**
- * Feed poller for EigenFlux broadcast items.
- * Uses the eigenflux CLI (`eigenflux feed poll`) instead of direct HTTP calls.
+ * Feed poller for AliceRealm broadcast items.
+ * Uses the alicerealm CLI (`alicerealm feed poll`) instead of direct HTTP calls.
  *
  * The poll interval is read fresh from the CLI config (`feed_poll_interval`)
  * before each scheduling, so dashboard/CLI changes take effect within one
- * cycle; the EIGENFLUX_FEED_POLL_INTERVAL env var overrides when set.
+ * cycle; the ALICEREALM_FEED_POLL_INTERVAL env var overrides when set.
  *
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
 
 import type { FeedResponse } from './types.js';
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 import { readPollIntervalSec } from './poll-interval.js';
 import { DEFAULT_POLL_INTERVAL_SEC } from './config.js';
 import { getInstalledCliVersion, supportsHeartbeatOrigin, supportsFeedBatches } from './cli-version.js';
@@ -30,7 +30,7 @@ export type ExecFn = <T>(bin: string, args: string[], options?: ExecOptions) => 
 
 export interface FeedPollerConfig {
   serverName: string;
-  eigenfluxBin: string;
+  alicerealmBin: string;
   /** Env override; null = read the CLI config dynamically each cycle. */
   pollIntervalOverrideSec: number | null;
   onFeedUpdate: (payload: FeedResponse, heartbeatPlan: HeartbeatPlan | null) => Promise<void>;
@@ -70,7 +70,7 @@ export class FeedPoller {
 
   start(): void {
     if (this.running) {
-      log('[eigenflux:feed] Poller already running');
+      log('[alicerealm:feed] Poller already running');
       return;
     }
 
@@ -78,12 +78,12 @@ export class FeedPoller {
     const intervalNote = this.config.pollIntervalOverrideSec !== null
       ? `${this.config.pollIntervalOverrideSec}s (env override)`
       : `dynamic (CLI config, default ${DEFAULT_POLL_INTERVAL_SEC}s)`;
-    log(`[eigenflux:feed] Starting poller for server=${this.config.serverName} (interval: ${intervalNote})`);
+    log(`[alicerealm:feed] Starting poller for server=${this.config.serverName} (interval: ${intervalNote})`);
 
     // Immediate poll, then chain-schedule subsequent polls
     this.pollOnce()
       .catch((err) => {
-        log('[eigenflux:feed] Initial poll error:', err);
+        log('[alicerealm:feed] Initial poll error:', err);
       })
       .finally(() => {
         void this.scheduleNext();
@@ -93,7 +93,7 @@ export class FeedPoller {
   async stop(): Promise<void> {
     if (!this.running) return;
 
-    log('[eigenflux:feed] Stopping poller');
+    log('[alicerealm:feed] Stopping poller');
     this.running = false;
 
     if (this.timeoutId) {
@@ -103,7 +103,7 @@ export class FeedPoller {
 
     // Wait for the in-flight delivery attempt; it settles within the delivery timeout.
     if (this.activeDelivery) {
-      log('[eigenflux:feed] Waiting for in-flight delivery attempt before stop');
+      log('[alicerealm:feed] Waiting for in-flight delivery attempt before stop');
       await this.activeDelivery;
     }
   }
@@ -112,7 +112,7 @@ export class FeedPoller {
     if (!this.running) return;
 
     const intervalSec = this.config.pollIntervalOverrideSec
-      ?? await readPollIntervalSec(this.config.eigenfluxBin, this.config.serverName);
+      ?? await readPollIntervalSec(this.config.alicerealmBin, this.config.serverName);
 
     if (!this.running) return;
 
@@ -120,7 +120,7 @@ export class FeedPoller {
       this.timeoutId = null;
       this.pollOnce()
         .catch((err) => {
-          log('[eigenflux:feed] Poll error:', err);
+          log('[alicerealm:feed] Poll error:', err);
         })
         .finally(() => {
           void this.scheduleNext();
@@ -129,7 +129,7 @@ export class FeedPoller {
   }
 
   private async skipped(): Promise<null> {
-    try { await this.config.onPollSkipped?.(); } catch (error) { log('[eigenflux:feed] maintenance failed:', error); }
+    try { await this.config.onPollSkipped?.(); } catch (error) { log('[alicerealm:feed] maintenance failed:', error); }
     return null;
   }
 
@@ -151,9 +151,9 @@ export class FeedPoller {
       await delivery;
       this.pending = null;
     } catch (error) {
-      log(`[eigenflux:feed] Delivery attempt ${pending.attempts}/${MAX_DELIVERY_ATTEMPTS} failed: ${String(error)}`);
+      log(`[alicerealm:feed] Delivery attempt ${pending.attempts}/${MAX_DELIVERY_ATTEMPTS} failed: ${String(error)}`);
       if (pending.attempts >= MAX_DELIVERY_ATTEMPTS) {
-        log(`[eigenflux:feed] ERROR dropping payload after ${MAX_DELIVERY_ATTEMPTS} failed deliveries`);
+        log(`[alicerealm:feed] ERROR dropping payload after ${MAX_DELIVERY_ATTEMPTS} failed deliveries`);
         this.pending = null;
       }
     } finally {
@@ -174,13 +174,13 @@ export class FeedPoller {
       }
       let started: HeartbeatStartResult = null;
       try { started = await this.config.onHeartbeatStart?.() ?? null; }
-      catch (error) { log('[eigenflux:feed] heartbeat plan unavailable:', error); }
+      catch (error) { log('[alicerealm:feed] heartbeat plan unavailable:', error); }
       if (started && 'kind' in started && started.kind === 'auth_required') {
         await this.config.onAuthRequired(started.stderr);
         return null;
       }
       if (started && 'kind' in started && started.kind === 'auth_unavailable') {
-        log(`[eigenflux:feed] Credential acquisition unavailable; cycle stopped: ${started.stderr}`);
+        log(`[alicerealm:feed] Credential acquisition unavailable; cycle stopped: ${started.stderr}`);
         return null;
       }
       if (started && 'kind' in started && started.kind === 'not_installed') {
@@ -189,15 +189,15 @@ export class FeedPoller {
       }
       const plan = started && 'agent_prompt' in started ? started : null;
       if (!plan) {
-        log('[eigenflux:feed] Skipping poll: current heartbeat plan unavailable');
+        log('[alicerealm:feed] Skipping poll: current heartbeat plan unavailable');
         return this.skipped();
       }
       // Re-read every cycle so a CLI upgrade or downgrade changes the argv on the next pull.
-      const exec = this.config.exec ?? execEigenflux;
-      const cliVersion = await getInstalledCliVersion(this.config.eigenfluxBin, exec);
+      const exec = this.config.exec ?? execAliceRealm;
+      const cliVersion = await getInstalledCliVersion(this.config.alicerealmBin, exec);
       const origin = supportsHeartbeatOrigin(cliVersion) ? ['--origin', 'heartbeat'] : [];
       const result = await exec<FeedResponse['data']>(
-        this.config.eigenfluxBin,
+        this.config.alicerealmBin,
         ['feed', 'poll', '--limit', '20', '--action', 'refresh', '-s', this.config.serverName, '-f', 'json', ...(supportsFeedBatches(cliVersion) ? ['--batch', '5'] : []), ...origin]
       );
       if (result.kind === 'not_installed') {
@@ -209,19 +209,19 @@ export class FeedPoller {
         return null;
       }
       if (result.kind === 'error') {
-        log(`[eigenflux:feed] CLI error: ${result.error.message}`);
+        log(`[alicerealm:feed] CLI error: ${result.error.message}`);
         return null;
       }
       const data: FeedResponse = {code: 0, msg: 'success', data: result.data};
       try { await this.config.onPollSuccess?.(); }
-      catch (error) { log('[eigenflux:feed] onPollSuccess hook error:', error); }
+      catch (error) { log('[alicerealm:feed] onPollSuccess hook error:', error); }
       if (plan.wake_on_empty || (data.data.items?.length ?? 0) > 0 || (data.data.notifications?.length ?? 0) > 0) {
         this.pending = {data, plan, attempts: 0};
         await this.deliverPending();
       }
       return data;
     } catch (error) {
-      log('[eigenflux:feed] Poll failed:', error instanceof Error ? error.message : error);
+      log('[alicerealm:feed] Poll failed:', error instanceof Error ? error.message : error);
       return null;
     } finally {
       this.polling = false;

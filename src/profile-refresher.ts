@@ -3,7 +3,7 @@
  * The CLI owns eligibility, due times, cooldowns, and task instructions.
  */
 
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 import { collectClaudeCodeContext, EMPTY_CONTEXT, type RefreshContext } from './claude-code-context.js';
 
 const log = console.error;
@@ -11,7 +11,7 @@ type ExecFn = <T>(bin: string, args: string[], options?: ExecOptions) => Promise
 
 export interface ProfileRefresherConfig {
   serverName: string;
-  eigenfluxBin: string;
+  alicerealmBin: string;
   onRefreshPrompt: (prompt: string) => Promise<void>;
   onAuthRequired: (detail: string) => Promise<void>;
   collectContext?: () => RefreshContext;
@@ -40,12 +40,12 @@ export class ProfileRefresher {
       try {
         context = (this.config.collectContext ?? collectClaudeCodeContext)() ?? EMPTY_CONTEXT;
       } catch (error) {
-        log(`[eigenflux:profile-refresh] Context collection failed: ${String(error)}`);
+        log(`[alicerealm:profile-refresh] Context collection failed: ${String(error)}`);
       }
       if (!this.running) return;
 
-      const result = await (this.config.exec ?? execEigenflux)<string>(
-        this.config.eigenfluxBin,
+      const result = await (this.config.exec ?? execAliceRealm)<string>(
+        this.config.alicerealmBin,
         [
           'profile', 'refresh-task', '-s', this.config.serverName, '--format', 'agent',
           ...context.memoryDirs.flatMap((directory) => ['--memory-dir', directory]),
@@ -60,13 +60,13 @@ export class ProfileRefresher {
       }
       if (result.kind !== 'success') {
         const detail = result.kind === 'error' ? result.error.message : result.bin;
-        log(`[eigenflux:profile-refresh] refresh-task failed: ${result.kind}: ${detail}`);
+        log(`[alicerealm:profile-refresh] refresh-task failed: ${result.kind}: ${detail}`);
         return;
       }
       const prompt = result.data?.trim();
       if (prompt) await this.config.onRefreshPrompt(prompt);
     } catch (error) {
-      log(`[eigenflux:profile-refresh] Task failed: ${String(error)}`);
+      log(`[alicerealm:profile-refresh] Task failed: ${String(error)}`);
     } finally {
       this.inFlight = false;
     }

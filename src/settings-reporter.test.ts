@@ -8,7 +8,7 @@ test('pushes mode=plugin for the configured server', async () => {
     calls.push(args);
     return { kind: 'success', data: '' } as CliResult<unknown>;
   }) as ExecFn;
-  const reporter = new SettingsReporter('eigenflux', 'srv', exec);
+  const reporter = new SettingsReporter('alicerealm', 'srv', exec);
 
   expect(await reporter.report()).toBe(true);
   expect(calls.length).toBe(1);
@@ -22,7 +22,7 @@ test('is re-entrant safe: a concurrent report is skipped', async () => {
     await gate;
     return { kind: 'success', data: '' };
   }) as ExecFn;
-  const reporter = new SettingsReporter('eigenflux', 'srv', exec);
+  const reporter = new SettingsReporter('alicerealm', 'srv', exec);
 
   const first = reporter.report();
   const second = await reporter.report(); // while first is in flight
@@ -33,7 +33,7 @@ test('is re-entrant safe: a concurrent report is skipped', async () => {
 
 test('failures are swallowed and reported as false', async () => {
   const failing: ExecFn = (async () => ({ kind: 'auth_required', stderr: '' })) as ExecFn;
-  expect(await new SettingsReporter('eigenflux', 'srv', failing).report()).toBe(false);
+  expect(await new SettingsReporter('alicerealm', 'srv', failing).report()).toBe(false);
   const throwing: ExecFn = (async () => { throw new Error('boom'); }) as ExecFn;
-  expect(await new SettingsReporter('eigenflux', 'srv', throwing).report()).toBe(false);
+  expect(await new SettingsReporter('alicerealm', 'srv', throwing).report()).toBe(false);
 });

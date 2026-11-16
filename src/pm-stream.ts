@@ -1,6 +1,6 @@
 /**
- * Stream client for EigenFlux private message updates.
- * Manages a long-running `eigenflux stream` child process that outputs NDJSON.
+ * Stream client for AliceRealm private message updates.
+ * Manages a long-running `alicerealm stream` child process that outputs NDJSON.
  *
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
@@ -45,8 +45,8 @@ export interface PmStreamEvent {
 
 export interface PmStreamClientConfig {
   serverName: string;
-  eigenfluxHome?: string;
-  eigenfluxBin: string;
+  alicerealmHome?: string;
+  alicerealmBin: string;
   onPmEvent: (event: PmStreamEvent) => Promise<void>;
   onAuthRequired: (detail: string) => Promise<void>;
   /** Test seams; production uses child_process.spawn and the exported defaults. */
@@ -104,14 +104,14 @@ export class PmStreamClient {
 
   start(): void {
     if (this.running || this.stoppingPromise || this.rolling || (this.child && !this.childClosed)) {
-      log('[eigenflux:stream] Stream client already running');
+      log('[alicerealm:stream] Stream client already running');
       return;
     }
 
     this.running = true;
     this.stopping = false;
     const generation = ++this.generation;
-    log(`[eigenflux:stream] Starting stream client for server=${this.config.serverName}`);
+    log(`[alicerealm:stream] Starting stream client for server=${this.config.serverName}`);
     this.spawnStreamProcess(generation);
   }
 
@@ -147,14 +147,14 @@ export class PmStreamClient {
     const generation = this.generation;
     this.rolling = true;
     this.clearRestart();
-    log(`[eigenflux:stream] CLI handoff requested (from=${this.cliVersion ?? 'unknown'}, to=${version}, pending=${this.pendingEvents.length})`);
+    log(`[alicerealm:stream] CLI handoff requested (from=${this.cliVersion ?? 'unknown'}, to=${version}, pending=${this.pendingEvents.length})`);
     this.handoff = (async () => {
       // Keep stdout attached through close: a process can exit while unread
       // messages are still buffered in its pipes.
       await this.terminateChild();
       await this.waitForDelivery();
       if (this.stopping || !this.running) return;
-      log(`[eigenflux:stream] Loading CLI ${version}`);
+      log(`[alicerealm:stream] Loading CLI ${version}`);
       this.spawnStreamProcess(generation);
       this.cliVersion = version;
     })();
@@ -229,14 +229,14 @@ export class PmStreamClient {
     }
 
     const args = ['stream', '-s', this.config.serverName, '-f', 'json'];
-    if (this.config.eigenfluxHome) args.push('--homedir', this.config.eigenfluxHome);
+    if (this.config.alicerealmHome) args.push('--homedir', this.config.alicerealmHome);
     if (this.lastCursor) {
       args.push('--cursor', this.lastCursor);
     }
 
-    log(`[eigenflux:stream] Spawning: ${this.config.eigenfluxBin} ${args.join(' ')}`);
+    log(`[alicerealm:stream] Spawning: ${this.config.alicerealmBin} ${args.join(' ')}`);
 
-    const child = this.spawnFn(this.config.eigenfluxBin, args, {
+    const child = this.spawnFn(this.config.alicerealmBin, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env },
     });
@@ -270,32 +270,32 @@ export class PmStreamClient {
       stderr = (stderr + stderrDecoder.write(chunk)).slice(-64 * 1024);
       const text = chunk.toString().trim();
       if (text) {
-        log(`[eigenflux:stream] stderr: ${text}`);
+        log(`[alicerealm:stream] stderr: ${text}`);
       }
     });
 
     child.once('error', (err) => {
       if (generation !== this.generation || this.child !== child) return;
-      log(`[eigenflux:stream] Process error: ${err.message}`);
+      log(`[alicerealm:stream] Process error: ${err.message}`);
     });
 
     child.once('close', (code, signal) => {
       rl.close();
       if (generation !== this.generation || this.child !== child) return;
       stderr = (stderr + stderrDecoder.end()).slice(-64 * 1024);
-      log(`[eigenflux:stream] Process stdio closed (code=${code}, signal=${signal})`);
+      log(`[alicerealm:stream] Process stdio closed (code=${code}, signal=${signal})`);
 
       if (this.stopping || this.rolling) {
         return;
       }
 
       if (code === EXIT_AUTH_REQUIRED) {
-        log('[eigenflux:stream] Auth required');
+        log('[alicerealm:stream] Auth required');
         this.config.onAuthRequired(stderr.trim()).then(() => {
           this.scheduleRestart(generation);
         }).catch((err) => {
           if (generation !== this.generation) return;
-          log(`[eigenflux:stream] Auth handler error: ${err instanceof Error ? err.message : String(err)}`);
+          log(`[alicerealm:stream] Auth handler error: ${err instanceof Error ? err.message : String(err)}`);
           this.scheduleRestart(generation);
         });
         return;
@@ -321,7 +321,7 @@ export class PmStreamClient {
       this.pendingEvents.push(event);
       this.deliverPending();
     } catch (err) {
-      log(`[eigenflux:stream] Failed to parse line: ${(err as Error).message}`);
+      log(`[alicerealm:stream] Failed to parse line: ${(err as Error).message}`);
     }
   }
 
@@ -338,7 +338,7 @@ export class PmStreamClient {
     })().catch((err) => {
       // Backend fetch may already mark messages read. Retain the actual event;
       // an older cursor cannot recover a failed channel notification.
-      log(`[eigenflux:stream] PM notification retained for retry (pending=${this.pendingEvents.length}): ${err instanceof Error ? err.message : String(err)}`);
+      log(`[alicerealm:stream] PM notification retained for retry (pending=${this.pendingEvents.length}): ${err instanceof Error ? err.message : String(err)}`);
     }).finally(() => {
       this.delivering = false;
     });
@@ -352,12 +352,12 @@ export class PmStreamClient {
     this.consecutiveFailures += 1;
 
     if (this.consecutiveFailures >= this.maxConsecutiveFailures) {
-      log(`[eigenflux:stream] Giving up after ${this.maxConsecutiveFailures} consecutive failures`);
+      log(`[alicerealm:stream] Giving up after ${this.maxConsecutiveFailures} consecutive failures`);
       this.running = false;
       return;
     }
 
-    log(`[eigenflux:stream] Reconnecting in ${this.backoffMs}ms (failure #${this.consecutiveFailures})`);
+    log(`[alicerealm:stream] Reconnecting in ${this.backoffMs}ms (failure #${this.consecutiveFailures})`);
 
     const previousChild = this.child;
     const timer = setTimeout(async () => {
@@ -369,7 +369,7 @@ export class PmStreamClient {
           this.spawnStreamProcess(generation);
         }
       } catch (error) {
-        log(`[eigenflux:stream] Reconnect deferred: ${String(error)}`);
+        log(`[alicerealm:stream] Reconnect deferred: ${String(error)}`);
         this.scheduleRestart(generation);
       }
     }, this.backoffMs);

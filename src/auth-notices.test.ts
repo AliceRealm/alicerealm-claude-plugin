@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { authenticationUnavailable, authRequiredNotice } from './auth-notices.js';
-import { execEigenflux } from './cli-executor.js';
+import { execAliceRealm } from './cli-executor.js';
 
 const unavailable = {
   schema_version: 'eigenflux_auth_unavailable.v1', status: 'auth_unavailable',
@@ -42,14 +42,14 @@ test('real child exit 2 classifies the CLI notice while other exits and ordinary
     [2, 'HTTP 429 business endpoint rate limited', undefined],
     [2, JSON.stringify({ ...unavailable, schema_version: 'unknown.v2' }), undefined],
   ] as const) {
-    const result = await execEigenflux(process.execPath, ['-e',
+    const result = await execAliceRealm(process.execPath, ['-e',
       `process.stderr.write(${JSON.stringify(stderr)});process.exit(${exit})`]);
     expect(result.kind).toBe('error');
     if (result.kind !== 'error') throw new Error('expected process error');
     expect(result.authenticationUnavailable).toBe(expected);
     expect(result.stderr).toBe(stderr);
   }
-  const required = await execEigenflux(process.execPath, ['-e',
+  const required = await execAliceRealm(process.execPath, ['-e',
     'process.stderr.write("legacy auth detail");process.exit(4)']);
   expect(required).toEqual({ kind: 'auth_required', stderr: 'legacy auth detail' });
 });

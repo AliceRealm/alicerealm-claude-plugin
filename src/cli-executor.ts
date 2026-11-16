@@ -1,5 +1,5 @@
 /**
- * Generic helper to run `eigenflux` CLI commands as one-shot subprocesses.
+ * Generic helper to run `alicerealm` CLI commands as one-shot subprocesses.
  *
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
@@ -48,7 +48,7 @@ export function formatArgsForLog(args: string[]): string {
   return out.join(' ');
 }
 
-export function execEigenflux<T>(
+export function execAliceRealm<T>(
   bin: string,
   args: string[],
   options?: ExecOptions
@@ -56,7 +56,7 @@ export function execEigenflux<T>(
   const timeout = options?.timeout ?? DEFAULT_TIMEOUT_MS;
 
   return new Promise((resolve) => {
-    log(`[eigenflux:cli] exec: ${bin} ${formatArgsForLog(args)}`);
+    log(`[alicerealm:cli] exec: ${bin} ${formatArgsForLog(args)}`);
 
     execFile(
       bin,
@@ -77,7 +77,7 @@ export function execEigenflux<T>(
           // missing CLI is reported as not_installed and can never be mistaken
           // for an exit status (e.g. auth_required's 4).
           if (exitCode === 'ENOENT') {
-            log(`[eigenflux:cli] binary not found: ${bin}`);
+            log(`[alicerealm:cli] binary not found: ${bin}`);
             resolve({ kind: 'not_installed', bin });
             return;
           }
@@ -89,12 +89,12 @@ export function execEigenflux<T>(
                 : (error as any).status ?? null;
 
           if (numericExit === EXIT_AUTH_REQUIRED) {
-            log(`[eigenflux:cli] auth required: ${stderr.trim()}`);
+            log(`[alicerealm:cli] auth required: ${stderr.trim()}`);
             resolve({ kind: 'auth_required', stderr: stderr.trim() });
             return;
           }
 
-          log(`[eigenflux:cli] failed (exit=${numericExit}): ${stderr.trim() || error.message}`);
+          log(`[alicerealm:cli] failed (exit=${numericExit}): ${stderr.trim() || error.message}`);
           resolve({
             kind: 'error',
             error: new Error(stderr.trim() || error.message),
@@ -123,7 +123,7 @@ export function execEigenflux<T>(
           const data = JSON.parse(trimmed) as T;
           resolve({ kind: 'success', data });
         } catch (parseError) {
-          log(`[eigenflux:cli] JSON parse error: ${(parseError as Error).message}`);
+          log(`[alicerealm:cli] JSON parse error: ${(parseError as Error).message}`);
           resolve({
             kind: 'error',
             error: new Error(`Failed to parse CLI output: ${(parseError as Error).message}`),

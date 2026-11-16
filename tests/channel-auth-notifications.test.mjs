@@ -25,13 +25,13 @@ let profileResult = { kind: 'auth_required', stderr: detail };
 
 mock.module('../src/config.js', () => ({
   CONFIG: {
-    EIGENFLUX_BIN: '/mock/eigenflux', EIGENFLUX_SERVER: 'test', EIGENFLUX_HOME: '/mock/home',
+    ALICEREALM_BIN: '/mock/alicerealm', ALICEREALM_SERVER: 'test', ALICEREALM_HOME: '/mock/home',
     PLUGIN_VERSION: 'test', EXPECTED_CLI_VERSION: '0.6.7', FEED_POLL_INTERVAL_OVERRIDE_SEC: 600,
   },
   DEFAULT_POLL_INTERVAL_SEC: 600, MIN_POLL_INTERVAL_SEC: 10, MAX_POLL_INTERVAL_SEC: 86400,
 }));
 mock.module('../src/cli-executor.js', () => ({
-  execEigenflux: async (_bin, args) => {
+  execAliceRealm: async (_bin, args) => {
     if (args.includes('heartbeat')) return planResult;
     if (args[0] === 'profile') return profileResult;
     if (args[0] === 'feed' && args[1] === 'poll') {

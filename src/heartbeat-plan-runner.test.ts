@@ -9,8 +9,8 @@ test('runs the thin Heartbeat plan with the stable Home', async () => {
     return { kind: 'success', data: { agent_prompt: 'CURRENT CENTRAL PLAN', wake_on_empty: true } } as CliResult<T>;
   };
   const runner = new HeartbeatPlanRunner(
-    '/opt/eigenflux',
-    '/stable/claude/.eigenflux',
+    '/opt/alicerealm',
+    '/stable/claude/.alicerealm',
     'staging',
     exec
   );
@@ -18,10 +18,10 @@ test('runs the thin Heartbeat plan with the stable Home', async () => {
   expect(await runner.run()).toEqual({ agent_prompt: 'CURRENT CENTRAL PLAN', wake_on_empty: true });
   expect(calls).toEqual([
     {
-      bin: '/opt/eigenflux',
+      bin: '/opt/alicerealm',
       args: [
         '--homedir',
-        '/stable/claude/.eigenflux',
+        '/stable/claude/.alicerealm',
         '--server',
         'staging',
         'heartbeat',
@@ -41,7 +41,7 @@ test('does not interrupt the plugin heartbeat when the plan fails', async () => 
     exitCode: 1,
     stderr: 'offline',
   } as CliResult<T>);
-  const runner = new HeartbeatPlanRunner('eigenflux', '/stable/home', 'staging', exec);
+  const runner = new HeartbeatPlanRunner('alicerealm', '/stable/home', 'staging', exec);
   expect(await runner.run()).toBeNull();
 });
 
@@ -49,7 +49,7 @@ test('rejects a legacy plan without the central wake decision', async () => {
   const exec = async <T>() => ({
     kind: 'success', data: { agent_prompt: 'legacy plan' },
   } as CliResult<T>);
-  const runner = new HeartbeatPlanRunner('eigenflux', '/stable/home', 'staging', exec);
+  const runner = new HeartbeatPlanRunner('alicerealm', '/stable/home', 'staging', exec);
   expect(await runner.run()).toBeNull();
 });
 
@@ -59,7 +59,7 @@ test('retains CLI authentication failures as explicit blocked results', async ()
       ? { kind: 'error', error: new Error('credential service unavailable'), exitCode: 2,
         stderr: 'CENTRAL UNAVAILABLE', authenticationUnavailable: true }
       : { kind: 'auth_required', stderr: 'CENTRAL OWNER ACTION' }) as CliResult<T>;
-    const runner = new HeartbeatPlanRunner('eigenflux', '/stable/home', 'staging', exec);
+    const runner = new HeartbeatPlanRunner('alicerealm', '/stable/home', 'staging', exec);
     expect(await runner.run()).toEqual({
       kind: unavailable ? 'auth_unavailable' : 'auth_required',
       stderr: unavailable ? 'CENTRAL UNAVAILABLE' : 'CENTRAL OWNER ACTION',
@@ -69,7 +69,7 @@ test('retains CLI authentication failures as explicit blocked results', async ()
 
 test('ordinary endpoint 503 and 429 remain nonblocking plan failures', async () => {
   for (const code of [503, 429]) {
-    const runner = new HeartbeatPlanRunner('eigenflux', '/stable/home', 'staging', async <T>() => ({
+    const runner = new HeartbeatPlanRunner('alicerealm', '/stable/home', 'staging', async <T>() => ({
       kind: 'error', error: new Error(`HTTP ${code}`), exitCode: 2, stderr: `HTTP ${code}`,
     }) as CliResult<T>);
     expect(await runner.run()).toBeNull();
