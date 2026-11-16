@@ -1,5 +1,5 @@
 /**
- * Single-instance leader election for the EigenFlux channel plugin.
+ * Single-instance leader election for the AliceRealm channel plugin.
  *
  * Claude Code spawns one MCP server per session, so a user with many open
  * sessions gets many plugin instances — each polling the feed and streaming
@@ -15,7 +15,7 @@
  *
  * Priority: an instance whose ancestor `claude` process enables this plugin's
  * channel (`--channels` or `--dangerously-load-development-channels` with a
- * `plugin:eigenflux@<marketplace>` or `server:eigenflux` entry) outranks
+ * `plugin:alicerealm@<marketplace>` or `server:alicerealm` entry) outranks
  * ordinary instances. A higher-priority challenger causes the current leader
  * to abdicate (stop loops, release the socket) so the channel-enabled session
  * takes over. Equal priority never preempts — first holder wins.
@@ -62,7 +62,7 @@ function entryNamesPlugin(entry: string, pluginName: string): boolean {
  * are variadic (`--channels a b`, `--channels=a`); every following non-option
  * token is an entry.
  */
-export function commandEnablesChannel(command: string, pluginName = 'eigenflux'): boolean {
+export function commandEnablesChannel(command: string, pluginName = 'alicerealm'): boolean {
   let inChannelFlag = false;
   for (const token of command.trim().split(/\s+/)) {
     if (token.startsWith('-')) {
@@ -80,11 +80,11 @@ export function commandEnablesChannel(command: string, pluginName = 'eigenflux')
  * Walk up the process tree looking for an ancestor whose command line enables
  * this plugin's channel. Returns the election priority.
  *
- * `EIGENFLUX_LEADER_PRIORITY` overrides detection (useful in tests and as an
+ * `ALICEREALM_LEADER_PRIORITY` overrides detection (useful in tests and as an
  * operator escape hatch).
  */
-export function detectLeaderPriority(pluginName = 'eigenflux', maxDepth = 10): number {
-  const override = process.env.EIGENFLUX_LEADER_PRIORITY;
+export function detectLeaderPriority(pluginName = 'alicerealm', maxDepth = 10): number {
+  const override = process.env.ALICEREALM_LEADER_PRIORITY;
   if (override !== undefined) {
     const n = parseInt(override, 10);
     if (Number.isFinite(n)) return n;
@@ -193,7 +193,7 @@ export class LeaderElector {
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (this.server === server) {
         // Listening server died unexpectedly — drop leadership and re-contend.
-        this.opts.log(`[eigenflux:leader] lock socket error while leading: ${err.message}`);
+        this.opts.log(`[alicerealm:leader] lock socket error while leading: ${err.message}`);
         this.server = null;
         void this.abdicate('socket error');
         return;
@@ -201,13 +201,13 @@ export class LeaderElector {
       if (err.code === 'EADDRINUSE') {
         this.probeHolder();
       } else {
-        this.opts.log(`[eigenflux:leader] listen failed: ${err.message}`);
+        this.opts.log(`[alicerealm:leader] listen failed: ${err.message}`);
         this.scheduleRetry(this.opts.retryMs);
       }
     });
     server.listen(this.opts.sockPath, () => {
       this.server = server;
-      this.opts.log(`[eigenflux:leader] leadership acquired (priority=${this.opts.priority})`);
+      this.opts.log(`[alicerealm:leader] leadership acquired (priority=${this.opts.priority})`);
       this.opts.onAcquire();
     });
   }
@@ -228,7 +228,7 @@ export class LeaderElector {
     // stale socket and re-contend immediately. If two standbys race here,
     // the loser just hits EADDRINUSE and goes back to standby.
     const reclaimStale = (reason: string) => {
-      this.opts.log(`[eigenflux:leader] standby: reclaiming stale lock (${reason})`);
+      this.opts.log(`[alicerealm:leader] standby: reclaiming stale lock (${reason})`);
       try { fs.unlinkSync(this.opts.sockPath); } catch { /* raced */ }
       conn.destroy();
       this.staleStrikes = 0;
@@ -245,7 +245,7 @@ export class LeaderElector {
       conn.write(`PEER ${this.opts.priority}\n`);
       if (leaderPriority !== null && this.opts.priority > leaderPriority) {
         // Holder will abdicate on reading our priority — retry soon.
-        this.opts.log(`[eigenflux:leader] standby: preempting lower-priority leader (${leaderPriority} < ${this.opts.priority})`);
+        this.opts.log(`[alicerealm:leader] standby: preempting lower-priority leader (${leaderPriority} < ${this.opts.priority})`);
         finish(this.opts.preemptRetryMs);
       } else {
         finish(this.opts.retryMs);
@@ -289,7 +289,7 @@ export class LeaderElector {
     if (this.abdicating) return;
     this.abdicating = true;
     try {
-      this.opts.log(`[eigenflux:leader] abdicating: ${reason}`);
+      this.opts.log(`[alicerealm:leader] abdicating: ${reason}`);
       this.closeServer();
       await this.opts.onRelease();
     } finally {

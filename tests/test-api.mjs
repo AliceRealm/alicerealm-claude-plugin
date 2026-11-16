@@ -8,10 +8,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-const API = 'https://www.eigenflux.ai';
+const API = 'https://alicerealm.com';
 const SKILL_VER = '0.0.5';
 
-const creds = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.eigenflux/credentials.json'), 'utf8'));
+const creds = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.alicerealm/credentials.json'), 'utf8'));
 const TOKEN = creds.access_token;
 if (!TOKEN) { console.error('No token found'); process.exit(1); }
 
@@ -53,7 +53,7 @@ async function post(path, body) {
   return r.json();
 }
 
-console.log('\n🔍 Testing EigenFlux API endpoints...\n');
+console.log('\n🔍 Testing AliceRealm API endpoints...\n');
 
 // === Auth (skip login — don't want to trigger OTP) ===
 console.log('Auth:');

@@ -15,7 +15,7 @@ function feed(data: Partial<FeedResponse['data']>): FeedResponse {
 
 test('uses the backend-delivered contract and strips it from the echoed payload', () => {
   const out = buildFeedContent(
-    feed({ output_contract: 'SERVER CONTRACT v1 — follow. 📡 Powered by EigenFlux' })
+    feed({ output_contract: 'SERVER CONTRACT v1 — follow. 📡 Powered by AliceRealm' })
   );
 
   expect(out).toContain('SERVER CONTRACT v1');
@@ -36,12 +36,12 @@ test('explicit empty contract injects no rules and no fallback', () => {
 });
 
 test('reads the fallback contract from the CLI-synced Claude Skills directory', () => {
-  const root = mkdtempSync(join(tmpdir(), 'eigenflux-claude-skills-'));
-  const contractDir = join(root, 'ef-broadcast', 'references');
+  const root = mkdtempSync(join(tmpdir(), 'alicerealm-claude-skills-'));
+  const contractDir = join(root, 'ar-broadcast', 'references');
   mkdirSync(contractDir, { recursive: true });
   writeFileSync(join(contractDir, 'contract.md'), 'SYNCED CLAUDE CONTRACT');
-  const previous = process.env.EIGENFLUX_SKILLS_DIR;
-  process.env.EIGENFLUX_SKILLS_DIR = root;
+  const previous = process.env.ALICEREALM_SKILLS_DIR;
+  process.env.ALICEREALM_SKILLS_DIR = root;
 
   try {
     const out = buildFeedContent(feed({}));
@@ -49,27 +49,27 @@ test('reads the fallback contract from the CLI-synced Claude Skills directory', 
     writeFileSync(join(contractDir, 'contract.md'), 'UPDATED CENTRAL CONTRACT');
     expect(buildFeedContent(feed({}))).toContain('UPDATED CENTRAL CONTRACT');
   } finally {
-    if (previous === undefined) delete process.env.EIGENFLUX_SKILLS_DIR;
-    else process.env.EIGENFLUX_SKILLS_DIR = previous;
+    if (previous === undefined) delete process.env.ALICEREALM_SKILLS_DIR;
+    else process.env.ALICEREALM_SKILLS_DIR = previous;
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test('fails when neither the server nor synchronized Skills supplies a contract', () => {
-  const root = mkdtempSync(join(tmpdir(), 'eigenflux-missing-contract-'));
-  const previous = process.env.EIGENFLUX_SKILLS_DIR;
-  process.env.EIGENFLUX_SKILLS_DIR = root;
+  const root = mkdtempSync(join(tmpdir(), 'alicerealm-missing-contract-'));
+  const previous = process.env.ALICEREALM_SKILLS_DIR;
+  process.env.ALICEREALM_SKILLS_DIR = root;
   try {
     expect(() => buildFeedContent(feed({}), 'CENTRAL PLAN')).toThrow('central Feed contract is unavailable');
     expect(buildFeedContent(feed({ output_contract: '' }))).not.toContain('OUTPUT CONTRACT');
     expect(buildFeedContent(feed({ output_contract: 'SERVER CONTRACT' }))).toContain('SERVER CONTRACT');
-    const contractDir = join(root, 'ef-broadcast', 'references');
+    const contractDir = join(root, 'ar-broadcast', 'references');
     mkdirSync(contractDir, { recursive: true });
     writeFileSync(join(contractDir, 'contract.md'), '   ');
     expect(() => buildFeedContent(feed({}))).toThrow('central Feed contract is empty');
   } finally {
-    if (previous === undefined) delete process.env.EIGENFLUX_SKILLS_DIR;
-    else process.env.EIGENFLUX_SKILLS_DIR = previous;
+    if (previous === undefined) delete process.env.ALICEREALM_SKILLS_DIR;
+    else process.env.ALICEREALM_SKILLS_DIR = previous;
     rmSync(root, { recursive: true, force: true });
   }
 });

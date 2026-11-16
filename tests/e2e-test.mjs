@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * End-to-end test for the EigenFlux Claude Code plugin.
+ * End-to-end test for the AliceRealm Claude Code plugin.
  *
  * Spawns a child `claude -p` process with the plugin loaded via --plugin-dir
  * and asserts that:
  *   1. The plugin loads without error.
- *   2. The eigenflux MCP server connects.
- *   3. At least one of the ef-* skills is discoverable.
- *   4. The eigenflux MCP server exposes NO tools (channel-only plugin).
+ *   2. The alicerealm MCP server connects.
+ *   3. At least one of the ar-* skills is discoverable.
+ *   4. The alicerealm MCP server exposes NO tools (channel-only plugin).
  *
  * Writes a human-readable report to .tmp/e2e-test-report.md and exits
  * non-zero on any assertion failure.
@@ -120,10 +120,10 @@ async function main() {
   const results = [];
   const scenarios = [];
 
-  // Scenario 1: skill listing — ask the agent which ef-* skills are available.
+  // Scenario 1: skill listing — ask the agent which ar-* skills are available.
   const s1 = await runScenario(
     'skill-discovery',
-    'List all skills whose name starts with "ef-" (EigenFlux skills: ef-broadcast, ef-communication, ef-profile). Reply with just the names, one per line. If none are available, reply only the single word NONE.',
+    'List all skills whose name starts with "ar-" (AliceRealm skills: ar-broadcast, ar-communication, ar-profile). Reply with just the names, one per line. If none are available, reply only the single word NONE.',
   );
   scenarios.push(s1);
 
@@ -131,7 +131,7 @@ async function main() {
   // expose no tools. Ask the agent and expect NONE.
   const s2 = await runScenario(
     'mcp-tools-discovery',
-    'List every MCP tool you have available whose name contains the substring "eigenflux" (tools typically look like mcp__plugin_eigenflux_eigenflux__<toolname> or eigenflux_<toolname>). Reply one full tool name per line, no commentary. If none exist, reply only NONE.',
+    'List every MCP tool you have available whose name contains the substring "alicerealm" (tools typically look like mcp__plugin_alicerealm_alicerealm__<toolname> or alicerealm_<toolname>). Reply one full tool name per line, no commentary. If none exist, reply only NONE.',
   );
   scenarios.push(s2);
 
@@ -148,26 +148,26 @@ async function main() {
   assert(s2.exitCode === 0, 'scenario 2 (mcp tools discovery) exited 0', results);
 
   assert(
-    /ef-broadcast|ef-communication|ef-profile/i.test(reply1),
-    `scenario 1 agent reply lists at least one ef-* skill; got: ${JSON.stringify(reply1).slice(0, 300)}`,
+    /ar-broadcast|ar-communication|ar-profile/i.test(reply1),
+    `scenario 1 agent reply lists at least one ar-* skill; got: ${JSON.stringify(reply1).slice(0, 300)}`,
     results,
   );
 
   assert(
     /^\s*NONE\s*$/i.test(reply2.trim()),
-    `scenario 2 agent reports no eigenflux MCP tools (channel-only plugin); got: ${JSON.stringify(reply2).slice(0, 300)}`,
+    `scenario 2 agent reports no alicerealm MCP tools (channel-only plugin); got: ${JSON.stringify(reply2).slice(0, 300)}`,
     results,
   );
 
   // MCP server connected check — look for the success line in verbose stream.
   const mcpConnectedInEvents = scenarios.some((s) =>
-    /plugin:eigenflux:eigenflux.*Successfully connected|eigenflux.*MCP server connected via stdio/i.test(
+    /plugin:alicerealm:alicerealm.*Successfully connected|alicerealm.*MCP server connected via stdio/i.test(
       s.allText,
     ),
   );
   assert(
     mcpConnectedInEvents,
-    'eigenflux MCP server connected (visible in stream)',
+    'alicerealm MCP server connected (visible in stream)',
     results,
   );
 
@@ -190,7 +190,7 @@ function buildReport(scenarios, results) {
   const pass = results.filter((r) => r.pass).length;
   const total = results.length;
   const lines = [];
-  lines.push('# EigenFlux Claude Code Plugin — End-to-End Test Report');
+  lines.push('# AliceRealm Claude Code Plugin — End-to-End Test Report');
   lines.push('');
   lines.push(`**Run at:** ${now}`);
   lines.push(`**Result:** ${pass}/${total} assertions passed`);

@@ -5,21 +5,21 @@
  * All logging goes to stderr (stdout reserved for MCP stdio transport).
  */
 
-import { execEigenflux, type CliResult, type ExecOptions } from './cli-executor.js';
+import { execAliceRealm, type CliResult, type ExecOptions } from './cli-executor.js';
 
 export type ExecFn = <T>(bin: string, args: string[], options?: ExecOptions) => Promise<CliResult<T>>;
 
 /**
- * Read the installed CLI version via `eigenflux version` (its JSON output
+ * Read the installed CLI version via `alicerealm version` (its JSON output
  * includes `cli_version`). Returns null when the CLI is missing or the
  * version is unreadable.
  */
 export async function getInstalledCliVersion(
-  eigenfluxBin: string,
-  exec: ExecFn = execEigenflux
+  alicerealmBin: string,
+  exec: ExecFn = execAliceRealm
 ): Promise<string | null> {
   try {
-    const result = await exec<{ cli_version?: string }>(eigenfluxBin, ['version']);
+    const result = await exec<{ cli_version?: string }>(alicerealmBin, ['version']);
     if (result.kind === 'success' && typeof result.data?.cli_version === 'string') {
       return result.data.cli_version;
     }

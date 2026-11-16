@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * End-to-end test for the EigenFlux Claude Code channel plugin.
+ * End-to-end test for the AliceRealm Claude Code channel plugin.
  *
  * Flow:
- *   1. Start a mock EigenFlux API (HTTP) returning fake feed + PM data
+ *   1. Start a mock AliceRealm API (HTTP) returning fake feed + PM data
  *   2. Spawn the built channel plugin (dist/channel.js) as a child process
  *   3. Do the MCP stdio handshake (act as Claude Code would)
  *   4. Wait for notifications/claude/channel push events
@@ -18,7 +18,7 @@ import path from 'node:path'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const MOCK_PORT = 19999
 
-// ─── Mock EigenFlux API payloads ─────────────────────────────────────────────
+// ─── Mock AliceRealm API payloads ─────────────────────────────────────────────
 
 const now = Date.now()
 
@@ -30,11 +30,11 @@ const MOCK_FEED = {
       {
         item_id: 'mock_itm_001',
         summary:
-          'EigenFlux v2 draft: new agent coordination protocol enables sub-100ms routing between autonomous agents across distributed networks.',
+          'AliceRealm v2 draft: new agent coordination protocol enables sub-100ms routing between autonomous agents across distributed networks.',
         broadcast_type: 'research',
         domains: ['agent-systems', 'distributed-ai'],
-        keywords: ['agent-coordination', 'routing', 'eigenflux-v2'],
-        url: 'https://eigenflux.ai/feed/mock_itm_001',
+        keywords: ['agent-coordination', 'routing', 'alicerealm-v2'],
+        url: 'https://alicerealm.ai/feed/mock_itm_001',
         updated_at: now,
       },
       {
@@ -44,7 +44,7 @@ const MOCK_FEED = {
         broadcast_type: 'update',
         domains: ['claude-code', 'mcp'],
         keywords: ['channels', 'push-notification', 'agent-loop'],
-        url: 'https://eigenflux.ai/feed/mock_itm_002',
+        url: 'https://alicerealm.ai/feed/mock_itm_002',
         updated_at: now,
       },
     ],
@@ -70,7 +70,7 @@ const MOCK_PM = {
         from_agent_id: 'agent_alice_7f3c',
         conversation_id: 'conv_001',
         content:
-          "Hi! I'm working on the EigenFlux v2 coordination spec. I noticed you have a Claude Code integration — would you like to collaborate? I can share the draft routing protocol document and we can co-author the notification layer.",
+          "Hi! I'm working on the AliceRealm v2 coordination spec. I noticed you have a Claude Code integration — would you like to collaborate? I can share the draft routing protocol document and we can co-author the notification layer.",
         created_at: now,
       },
     ],
@@ -102,7 +102,7 @@ const apiServer = http.createServer((req, res) => {
 })
 
 await new Promise((resolve) => apiServer.listen(MOCK_PORT, resolve))
-console.log(`[mock-api] EigenFlux mock API listening on http://localhost:${MOCK_PORT}\n`)
+console.log(`[mock-api] AliceRealm mock API listening on http://localhost:${MOCK_PORT}\n`)
 
 // ─── Minimal MCP stdio client (newline-delimited JSON, SDK v1.x format) ──────
 
@@ -175,10 +175,10 @@ const pluginBin = path.join(__dirname, '..', 'dist/channel.js')
 const proc = spawn('node', [pluginBin], {
   env: {
     ...process.env,
-    EIGENFLUX_API_URL: `http://localhost:${MOCK_PORT}`,
-    EIGENFLUX_ACCESS_TOKEN: 'mock-token-abc123',
-    EIGENFLUX_FEED_POLL_INTERVAL: '3',
-    EIGENFLUX_PM_POLL_INTERVAL: '3',
+    ALICEREALM_API_URL: `http://localhost:${MOCK_PORT}`,
+    ALICEREALM_ACCESS_TOKEN: 'mock-token-abc123',
+    ALICEREALM_FEED_POLL_INTERVAL: '3',
+    ALICEREALM_PM_POLL_INTERVAL: '3',
   },
   stdio: ['pipe', 'pipe', 'pipe'],
 })
@@ -191,7 +191,7 @@ client.onNotification = (msg) => {
 
 // ─── Handshake ────────────────────────────────────────────────────────────────
 
-console.log('[test] Connecting to eigenflux channel plugin...')
+console.log('[test] Connecting to alicerealm channel plugin...')
 const initRes = await client.initialize()
 const info = initRes.result?.serverInfo ?? {}
 const caps = initRes.result?.capabilities ?? {}
@@ -212,7 +212,7 @@ const HR = '═'.repeat(68)
 const hr = '─'.repeat(68)
 
 console.log('\n' + HR)
-console.log('  EIGENFLUX CHANNEL PLUGIN — TEST RESULTS')
+console.log('  ALICEREALM CHANNEL PLUGIN — TEST RESULTS')
 console.log(HR)
 console.log(`\n  Received ${received.length} channel notification(s) from the plugin\n`)
 
@@ -231,7 +231,7 @@ for (let i = 0; i < received.length; i++) {
   const attrStr = Object.entries(meta)
     .map(([k, v]) => `${k}="${v}"`)
     .join(' ')
-  console.log(`  <channel source="eigenflux" ${attrStr}>`)
+  console.log(`  <channel source="alicerealm" ${attrStr}>`)
 
   let parsed
   try { parsed = JSON.parse(params.content) } catch (_) { parsed = null }
@@ -283,7 +283,7 @@ if (received.length > 0) {
     items.forEach((it) => {
       console.log(`    • Surface to user: "${it.summary?.slice(0, 72)}..."`)
     })
-    console.log(`    • Run \`eigenflux feed feedback --items '[...]'\` for consumed items (via ef-broadcast skill)`)
+    console.log(`    • Run \`alicerealm feed feedback --items '[...]'\` for consumed items (via ar-broadcast skill)`)
     console.log()
   }
 
@@ -294,13 +294,13 @@ if (received.length > 0) {
       console.log(`  New PM from ${m.from_agent_id}:`)
       console.log(`    "${m.content?.slice(0, 80)}..."`)
     })
-    console.log(`    • Run \`eigenflux pm send --to <agent_id> --content "..."\` to reply (via ef-communication skill)`)
+    console.log(`    • Run \`alicerealm pm send --to <agent_id> --content "..."\` to reply (via ar-communication skill)`)
     console.log()
   }
 
   console.log('  STATUS: ✓ channel plugin working')
   console.log('          ✓ notifications/claude/channel delivery confirmed')
-  console.log('          ✓ feed poller fetched mock EigenFlux API successfully')
+  console.log('          ✓ feed poller fetched mock AliceRealm API successfully')
   console.log('          ✓ PM poller fetched mock PM messages successfully')
 } else {
   console.log('  STATUS: ✗ no channel notifications received within 12s timeout')

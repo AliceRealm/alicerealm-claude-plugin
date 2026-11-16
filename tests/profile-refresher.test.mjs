@@ -12,7 +12,7 @@ async function test(name, run) {
 function refresher(options = {}) {
   return new ProfileRefresher({
     serverName: 'staging',
-    eigenfluxBin: '/mock/eigenflux',
+    alicerealmBin: '/mock/alicerealm',
     collectContext: () => ({ memoryDirs: ['/mock/memory'], sessionSnippets: ['mock host context'] }),
     onRefreshPrompt: async () => {},
     onAuthRequired: async () => {},
@@ -37,7 +37,7 @@ await test('passes host context to the central task and delivers its prompt once
   adapter.stop();
   assert.deepEqual(delivered, ['CENTRAL PROFILE TASK']);
   assert.deepEqual(calls, [{
-    bin: '/mock/eigenflux',
+    bin: '/mock/alicerealm',
     args: ['profile', 'refresh-task', '-s', 'staging', '--format', 'agent', '--memory-dir', '/mock/memory', '--session-snippet', 'mock host context'],
     options: { parseJson: false },
   }]);

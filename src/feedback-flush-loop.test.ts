@@ -12,7 +12,7 @@ function loopWith(results: Array<CliResult<unknown>>, calls: string[][]): Feedba
   }) as ExecFn;
   return new FeedbackFlushLoop({
     serverName: 'srv',
-    eigenfluxBin: 'eigenflux',
+    alicerealmBin: 'alicerealm',
     baseBackoffMs: 10,
     maxBackoffMs: 40,
     exec,

@@ -27,7 +27,7 @@ export interface FeedResponse {
     /**
      * Output-contract digest delivered inline by the backend. When present it is
      * surfaced as a leading prose block so the binding output rules reach the
-     * agent without depending on it loading the ef-broadcast skill.
+     * agent without depending on it loading the ar-broadcast skill.
      */
     output_contract?: string;
   };

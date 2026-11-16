@@ -52,7 +52,7 @@ function makeHarness(overrides: Partial<ConstructorParameters<typeof PmStreamCli
 
   h.client = new PmStreamClient({
     serverName: 'srv',
-    eigenfluxBin: 'eigenflux',
+    alicerealmBin: 'alicerealm',
     async onPmEvent(event) { pmEvents.push(event); },
     async onAuthRequired() { h.authCalls += 1; },
     spawnFn,
@@ -244,7 +244,7 @@ test('stop() terminates the child and suppresses restarts', async () => {
 
 
 test('stream children receive post-startup identity explicitly', async () => {
-  const previous = process.env.EIGENFLUX_HOST;
+  const previous = process.env.ALICEREALM_HOST;
   const child = new FakeChild();
   let observed: NodeJS.ProcessEnv | undefined;
   const h = makeHarness({spawnFn: (_bin, _args, options) => {
@@ -252,14 +252,14 @@ test('stream children receive post-startup identity explicitly', async () => {
     return child as unknown as ChildProcess;
   }});
   try {
-    process.env.EIGENFLUX_HOST = 'claude-code';
+    process.env.ALICEREALM_HOST = 'claude-code';
     h.client.start();
-    expect(observed?.EIGENFLUX_HOST).toBe('claude-code');
+    expect(observed?.ALICEREALM_HOST).toBe('claude-code');
     expect(observed).not.toBe(process.env);
   } finally {
     await h.client.stop();
-    if (previous === undefined) delete process.env.EIGENFLUX_HOST;
-    else process.env.EIGENFLUX_HOST = previous;
+    if (previous === undefined) delete process.env.ALICEREALM_HOST;
+    else process.env.ALICEREALM_HOST = previous;
   }
 });
 
@@ -271,7 +271,7 @@ function deferred() {
 
 test('CLI version handoff closes old stdio, drains notifications, and resumes the fixed identity and cursor', async () => {
   const delivered = deferred();
-  const h = makeHarness({ eigenfluxHome: '/fixed/agent/.eigenflux', onPmEvent: () => delivered.promise });
+  const h = makeHarness({ alicerealmHome: '/fixed/agent/.alicerealm', onPmEvent: () => delivered.promise });
   h.client.start();
   const old = h.spawns[0].child;
   old.stdout.write(JSON.stringify({ type: 'pm', data: { next_cursor: 'delivered-42' } }) + '\n');
@@ -286,7 +286,7 @@ test('CLI version handoff closes old stdio, drains notifications, and resumes th
   expect(old.killed).toBe(true);
   expect(h.spawns.length).toBe(2);
   expect(h.spawns[1].args).toEqual([
-    'stream', '-s', 'srv', '-f', 'json', '--homedir', '/fixed/agent/.eigenflux', '--cursor', 'delivered-42',
+    'stream', '-s', 'srv', '-f', 'json', '--homedir', '/fixed/agent/.alicerealm', '--cursor', 'delivered-42',
   ]);
   await h.client.refreshForCliVersion('0.6.6');
   expect(h.spawns.length).toBe(2);
@@ -366,7 +366,7 @@ test('real child replacement starts only after the old PID exits', async () => {
   const children: ChildProcess[] = [];
   const firstDelivered = deferred();
   const client = new PmStreamClient({
-    serverName: 'fixed', eigenfluxBin: '/test/eigenflux', eigenfluxHome: '/fixed/home',
+    serverName: 'fixed', alicerealmBin: '/test/alicerealm', alicerealmHome: '/fixed/home',
     async onAuthRequired() {},
     async onPmEvent() { firstDelivered.resolve(); },
     spawnFn: (_bin, _args, options) => {
@@ -446,7 +446,7 @@ test('real inherited stdout tail is delivered after process exit before CLI repl
   let exitSeen = false;
   let closeSeen = false;
   const client = new PmStreamClient({
-    serverName: 'fixed', eigenfluxBin: '/test/eigenflux',
+    serverName: 'fixed', alicerealmBin: '/test/alicerealm',
     async onAuthRequired() {},
     async onPmEvent(event) {
       got.push(event.data.next_cursor!);

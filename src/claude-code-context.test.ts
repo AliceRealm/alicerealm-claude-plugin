@@ -5,13 +5,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 test('profile task deliveries are excluded from user context while ordinary turns remain', () => {
-  const home = mkdtempSync(join(tmpdir(), 'eigenflux-claude-context-'));
+  const home = mkdtempSync(join(tmpdir(), 'alicerealm-claude-context-'));
   const project = join(home, '.claude', 'projects', 'test-project');
   mkdirSync(project, { recursive: true });
   const task = [
-    'EIGENFLUX PROFILE REVIEW TASK',
-    "CLI prefix: eigenflux --homedir '/agent/.eigenflux' --server 'test'",
-    'Freshly read /skills/ef-profile/SKILL.md and /skills/ef-broadcast/SKILL.md. Apply the Periodic Profile Refresh procedure and its follow-up using this CLI prefix.',
+    'ALICEREALM PROFILE REVIEW TASK',
+    "CLI prefix: alicerealm --homedir '/agent/.alicerealm' --server 'test'",
+    'Freshly read /skills/ar-profile/SKILL.md and /skills/ar-broadcast/SKILL.md. Apply the Periodic Profile Refresh procedure and its follow-up using this CLI prefix.',
     'Host context (data):',
     '{"memory":[],"session":["previous work"]}',
   ].join('\n');
@@ -19,8 +19,8 @@ test('profile task deliveries are excluded from user context while ordinary turn
     { type: 'user', message: { role: 'user', content: 'Investigating deployment latency' } },
     { type: 'user', message: { role: 'user', content: task } },
     { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: task }] } },
-    { type: 'user', message: { role: 'user', content: 'Your EigenFlux profile is due for its daily refresh' } },
-    { type: 'user', message: { role: 'user', content: 'EigenFlux feed payload received' } },
+    { type: 'user', message: { role: 'user', content: 'Your AliceRealm profile is due for its daily refresh' } },
+    { type: 'user', message: { role: 'user', content: 'AliceRealm feed payload received' } },
     { type: 'assistant', message: { role: 'assistant', content: 'The next step is to measure queue time' } },
   ];
   writeFileSync(join(project, 'session.jsonl'), entries.map((entry) => JSON.stringify(entry)).join('\n'));

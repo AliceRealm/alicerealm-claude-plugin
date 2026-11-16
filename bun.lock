@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@phronesis-io/claudecode-eigenflux",
+      "name": "@alicerealm/claudecode-alicerealm",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.12.0",
       },

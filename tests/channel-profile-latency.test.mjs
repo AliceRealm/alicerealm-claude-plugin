@@ -6,7 +6,7 @@ import { mock } from 'bun:test';
 // MCP transport, and the host scheduler. No live CLI or user context is read.
 mock.module('../src/config.js', () => ({
   CONFIG: {
-    EIGENFLUX_BIN: '/mock/eigenflux', EIGENFLUX_SERVER: 'test', EIGENFLUX_HOME: '/mock/home',
+    ALICEREALM_BIN: '/mock/alicerealm', ALICEREALM_SERVER: 'test', ALICEREALM_HOME: '/mock/home',
     PLUGIN_VERSION: 'test', EXPECTED_CLI_VERSION: '0.0.46', FEED_POLL_INTERVAL_OVERRIDE_SEC: 600,
   },
   DEFAULT_POLL_INTERVAL_SEC: 600, MIN_POLL_INTERVAL_SEC: 10, MAX_POLL_INTERVAL_SEC: 86400,
@@ -18,7 +18,7 @@ let finishProfile;
 let profileCalls = 0;
 const profileResult = new Promise((resolve) => { finishProfile = resolve; });
 mock.module('../src/cli-executor.js', () => ({
-  execEigenflux: async (_bin, args) => {
+  execAliceRealm: async (_bin, args) => {
     if (args[0] === 'profile') {
       profileCalls += 1;
       return profileResult;

@@ -13,8 +13,8 @@ function successFeed(): CliResult<unknown> {
 test('runs the Heartbeat plan hook before polling Feed', async () => {
   const order: string[] = [];
   const poller = new FeedPoller({
-    serverName: 'eigenflux',
-    eigenfluxBin: 'eigenflux',
+    serverName: 'alicerealm',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => { order.push('plan'); return {agent_prompt:'plan',wake_on_empty:false}; },
     exec: (async <T>() => {
@@ -35,7 +35,7 @@ test('delivers the matching central plan on empty Feed when the CLI requests a w
   const deliveries: unknown[] = [];
   const poller = new FeedPoller({
     serverName: 'staging',
-    eigenfluxBin: 'eigenflux',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => plan,
     exec: (async <T>(_bin: string, args: string[]) => {
@@ -57,8 +57,8 @@ test('does not wake on empty Feed when the central plan declines it', async () =
   let delivered = false;
   let successfulPolls = 0;
   const poller = new FeedPoller({
-    serverName: 'eigenflux',
-    eigenfluxBin: 'eigenflux',
+    serverName: 'alicerealm',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => ({ agent_prompt: 'CENTRAL READ-ONLY PLAN', wake_on_empty: false }),
     exec: (async <T>() => successFeed() as CliResult<T>) as ExecFn,
@@ -76,8 +76,8 @@ test('does not reuse a prior plan after the next plan fails', async () => {
   let cycles = 0;
   const deliveredPlans: unknown[] = [];
   const poller = new FeedPoller({
-    serverName: 'eigenflux',
-    eigenfluxBin: 'eigenflux',
+    serverName: 'alicerealm',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => {
       if (++cycles === 1) return { agent_prompt: 'FIRST PLAN', wake_on_empty: true };
@@ -101,8 +101,8 @@ test('does not reuse a prior plan after the next plan fails', async () => {
 test('preserves central authentication diagnostics', async () => {
   const diagnostics: string[] = [];
   const poller = new FeedPoller({
-    serverName: 'eigenflux',
-    eigenfluxBin: 'eigenflux',
+    serverName: 'alicerealm',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart:async()=>({agent_prompt:'plan',wake_on_empty:false}),
     exec: (async <T>() => ({ kind: 'auth_required', stderr: 'CENTRAL_AUTH_DIAGNOSTIC' }) as CliResult<T>) as ExecFn,
@@ -117,8 +117,8 @@ test('preserves central authentication diagnostics', async () => {
 test('skips Feed when the Heartbeat plan hook fails', async () => {
   let feedCalls = 0;
   const poller = new FeedPoller({
-    serverName: 'eigenflux',
-    eigenfluxBin: 'eigenflux',
+    serverName: 'alicerealm',
+    alicerealmBin: 'alicerealm',
     pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => { throw new Error('plan unavailable'); },
     exec: (async <T>() => {
@@ -138,13 +138,13 @@ test('real plan adapter stops before Feed for authentication failures, even when
     for (const failedNotification of [false, true]) {
       let feedCalls = 0;
       let reminders = 0;
-      const runner = new HeartbeatPlanRunner('eigenflux', '/stable/home', 'staging', async <T>() => (
+      const runner = new HeartbeatPlanRunner('alicerealm', '/stable/home', 'staging', async <T>() => (
         kind === 'auth_required' ? { kind, stderr: 'OWNER ACTION' }
           : { kind: 'error', error: new Error('credential unavailable'), exitCode: 2,
             stderr: 'UNAVAILABLE', authenticationUnavailable: true }
       ) as CliResult<T>);
       const poller = new FeedPoller({
-        serverName: 'staging', eigenfluxBin: 'eigenflux', pollIntervalOverrideSec: null,
+        serverName: 'staging', alicerealmBin: 'alicerealm', pollIntervalOverrideSec: null,
         onHeartbeatStart: () => runner.run(),
         exec: async <T>() => { feedCalls += 1; return successFeed() as CliResult<T>; },
         onFeedUpdate: async () => { throw new Error('blocked Feed must not deliver'); },
@@ -165,7 +165,7 @@ test('unknown plan status never permits a Feed poll', async () => {
   let calls = 0;
   let reminders = 0;
   const poller = new FeedPoller({
-    serverName: 'staging', eigenfluxBin: 'eigenflux', pollIntervalOverrideSec: null,
+    serverName: 'staging', alicerealmBin: 'alicerealm', pollIntervalOverrideSec: null,
     onHeartbeatStart: async () => ({ kind: 'future-status' } as never),
     exec: async <T>() => { calls += 1; return { kind: 'auth_required', stderr: 'AUTH' } as CliResult<T>; },
     onFeedUpdate: async () => {},
@@ -180,7 +180,7 @@ test('unknown plan status never permits a Feed poll', async () => {
 test('capacity and failed sends retain the original payload and retry once', async()=>{
  let feedCalls=0,attempts=0,maintenance=0;const seen:unknown[]=[];
  let finish!:()=>void;
- const poller=new FeedPoller({serverName:'test',eigenfluxBin:'eigenflux',pollIntervalOverrideSec:60,
+ const poller=new FeedPoller({serverName:'test',alicerealmBin:'alicerealm',pollIntervalOverrideSec:60,
  onHeartbeatStart:async()=>({agent_prompt:'original',wake_on_empty:true}),
  exec:async<T>(_bin:string,args:string[])=>({kind:'success',data:args[0]==='version'?{cli_version:'0.7.0'}:{items:[{item_id:String(++feedCalls)}],notifications:[]}} as CliResult<T>),
  onFeedUpdate:async(payload,plan)=>{seen.push({payload,plan});attempts++;if(attempts===1)await new Promise<void>(resolve=>{finish=resolve});throw new Error('channel failed')},
@@ -193,7 +193,7 @@ test('capacity and failed sends retain the original payload and retry once', asy
 });
 test.each(['0.6.10','0.7.0','0.7.1','0.8.0','unknown','0.7.1-rc.1'])('scheduled origin is gated for %s', async (version: string)=>{
  const calls:string[][]=[];
- const poller=new FeedPoller({serverName:'test',eigenfluxBin:'eigenflux',pollIntervalOverrideSec:60,
+ const poller=new FeedPoller({serverName:'test',alicerealmBin:'alicerealm',pollIntervalOverrideSec:60,
  onHeartbeatStart:async()=>({agent_prompt:'plan',wake_on_empty:false}),
  exec:async<T>(_bin:string,args:string[])=>{calls.push(args);return {kind:'success',data:args[0]==='version'?{cli_version:version}:{items:[],notifications:[]}} as CliResult<T>},
  onFeedUpdate:async()=>{},onAuthRequired:async()=>{}});
@@ -205,13 +205,13 @@ test('re-reads the CLI version every cycle so upgrades, downgrades and unreadabl
     { kind: 'success', data: { cli_version: '0.6.10' } },
     { kind: 'success', data: { cli_version: '0.7.1' } },
     { kind: 'success', data: { cli_version: '0.6.10' } },
-    { kind: 'not_installed', bin: 'eigenflux' },
+    { kind: 'not_installed', bin: 'alicerealm' },
     { kind: 'success', data: { cli_version: '0.7.1' } },
   ];
   const origins: boolean[] = [];
   const batches: boolean[] = [];
   const poller = new FeedPoller({
-    serverName: 'test', eigenfluxBin: 'eigenflux', pollIntervalOverrideSec: 60,
+    serverName: 'test', alicerealmBin: 'alicerealm', pollIntervalOverrideSec: 60,
     onHeartbeatStart: async () => ({ agent_prompt: 'plan', wake_on_empty: false }),
     exec: async <T>(_bin: string, args: string[]) => {
       if (args[0] === 'version') return versions.shift() as CliResult<T>;
@@ -228,7 +228,7 @@ test('re-reads the CLI version every cycle so upgrades, downgrades and unreadabl
 
 function hungFeedPoller(deliveryTimeoutMs: number, state: { feedCalls: number; deliveries: number }, hangDeliveries = Infinity) {
   return new FeedPoller({
-    serverName: 'test', eigenfluxBin: 'eigenflux', pollIntervalOverrideSec: 0.01, deliveryTimeoutMs,
+    serverName: 'test', alicerealmBin: 'alicerealm', pollIntervalOverrideSec: 0.01, deliveryTimeoutMs,
     onHeartbeatStart: async () => ({ agent_prompt: 'plan', wake_on_empty: true }),
     exec: async <T>(_bin: string, args: string[]) => {
       if (args[0] === 'version') return { kind: 'success', data: { cli_version: '0.6.10' } } as CliResult<T>;
@@ -288,7 +288,7 @@ test('stop() during a hung delivery returns once the delivery attempt times out'
 
 test('null plan skips all Feed calls but keeps maintenance',async()=>{
  let calls=0,maintenance=0;
- const poller=new FeedPoller({serverName:'test',eigenfluxBin:'eigenflux',pollIntervalOverrideSec:60,onHeartbeatStart:async()=>null,
+ const poller=new FeedPoller({serverName:'test',alicerealmBin:'alicerealm',pollIntervalOverrideSec:60,onHeartbeatStart:async()=>null,
  exec:async<T>()=>{calls++;return successFeed() as CliResult<T>},onFeedUpdate:async()=>{},onAuthRequired:async()=>{},onPollSkipped:()=>{maintenance++}});
  expect(await poller.pollOnce()).toBeNull();expect(calls).toBe(0);expect(maintenance).toBe(1);
 });
@@ -296,7 +296,7 @@ test('null plan skips all Feed calls but keeps maintenance',async()=>{
 test('a missing CLI plan retries the missing-episode notification without polling Feed', async () => {
   let notices = 0, feeds = 0;
   const poller = new FeedPoller({
-    serverName:'test',eigenfluxBin:'missing',pollIntervalOverrideSec:600,
+    serverName:'test',alicerealmBin:'missing',pollIntervalOverrideSec:600,
     onHeartbeatStart:async()=>({kind:'not_installed'}),
     onCliMissing:async()=>{notices++;if(notices===1)throw new Error('listener unavailable');},
     onFeedUpdate:async()=>{},onAuthRequired:async()=>{},

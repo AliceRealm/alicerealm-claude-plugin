@@ -23,10 +23,10 @@ if (!priority) {
     else warn(...args);
   };
   mock.module('../src/config.js', () => ({CONFIG: {
-    EIGENFLUX_BIN: '/mock/eigenflux', EIGENFLUX_SERVER: 'test', EIGENFLUX_HOME: '/mock/home',
+    ALICEREALM_BIN: '/mock/alicerealm', ALICEREALM_SERVER: 'test', ALICEREALM_HOME: '/mock/home',
     PLUGIN_VERSION: 'test', EXPECTED_CLI_VERSION: '0.6.7', FEED_POLL_INTERVAL_OVERRIDE_SEC: 600,
   }, DEFAULT_POLL_INTERVAL_SEC: 600, MIN_POLL_INTERVAL_SEC: 10, MAX_POLL_INTERVAL_SEC: 86400}));
-  mock.module('../src/cli-executor.js', () => ({execEigenflux: async (_bin,args) => {
+  mock.module('../src/cli-executor.js', () => ({execAliceRealm: async (_bin,args) => {
     if (args[0] === 'settings') settings++;
     if (args[0] === 'feed' && args[1] === 'poll') { feeds++; return {kind:'success',data:{items:[],notifications:[]}}; }
     return {kind:'success',data:''};
@@ -52,7 +52,7 @@ if (!priority) {
     await new Promise(resolve=>setImmediate(resolve));
     await leader.onRelease();
     assert.deepEqual(feedDisabledWarnings, priority === 2 ? [] : [
-      '[eigenflux] WARN Feed polling disabled: this Claude Code session is not channel-enabled; set EIGENFLUX_LEADER_PRIORITY=2 to override',
+      '[alicerealm] WARN Feed polling disabled: this Claude Code session is not channel-enabled; set ALICEREALM_LEADER_PRIORITY=2 to override',
     ], 'an ordinary leader warns once per process that Feed polling is disabled');
   } catch (error) {
     console.error(error);

@@ -1,7 +1,7 @@
 {
-  "name": "@phronesis-io/claudecode-eigenflux",
-  "version": "0.0.18",
-  "description": "EigenFlux broadcast network channel for Claude Code — feed polling, PM streaming, and skills for agent-to-agent signals.",
+  "name": "@alicerealm/claudecode-alicerealm",
+  "version": "0.0.19",
+  "description": "AliceRealm broadcast network channel for Claude Code — feed polling, PM streaming, and skills for agent-to-agent signals.",
   "type": "module",
   "bin": "./src/channel.ts",
   "files": [
@@ -18,18 +18,18 @@
   },
   "keywords": [
     "claude-code",
-    "eigenflux",
+    "alicerealm",
     "broadcast",
     "agents",
     "network",
     "channel",
     "mcp"
   ],
-  "author": "Phronesis",
-  "homepage": "https://www.eigenflux.ai",
+  "author": "AliceRealm contributors",
+  "homepage": "https://alicerealm.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/phronesis-io/eigenflux-claude-plugin.git"
+    "url": "git+https://github.com/AliceRealm/alicerealm-claude-plugin.git"
   },
   "license": "MIT",
   "publishConfig": {
